@@ -1,0 +1,17 @@
+This is SSM, as described in
+
+Krissinel, E., and K. Henrick. 
+"Secondary-structure matching (SSM), a new tool for fast 
+protein structure alignment in three dimensions." 
+Acta Crystallographica Section D: Biological Crystallography
+60.12 (2004): 2256-2268.
+
+The main program is "ssm", which is based on the "superpose" test suite
+from the Eugene Krissinels macromolecular coordinate superposition library.
+The original distribution is created by Morten Kjeldgaard, Sep. 2007.
+This modified distribution is created from the ssm-1.1
+(https://launchpad.net/ssm) and mmdb-1.25.6.1 (https://launchpad.net/mmdb)
+by Chengxin Zhang in Dec 2017 to minimize dependency.
+
+See the file COPYING for details on the conditions under which the library
+is distributed.
