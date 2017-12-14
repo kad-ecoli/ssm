@@ -35,6 +35,11 @@
 // =================================================================
 //
 
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <string>
+
 #ifndef  __STRING_H
 #include <string.h>
 #endif
@@ -52,6 +57,7 @@
 #include "ssm_align.h"
 #endif
 
+using namespace std;
 
 //  ---------------------------  CSSMAlign ------------------------
 
@@ -834,61 +840,95 @@ int i;
   }
 }
 
+void  CXAlignText::GetTMscore(float & tmscore1,float & tmscore2)
+{
+    int i; // i-th aligned residue
+    float d01=(na1>21)?(1.24*pow((na1-15.),(1./3))-1.8):0.5;
+    float d02=(na2>21)?(1.24*pow((na2-15.),(1./3))-1.8):0.5;
+
+    tmscore1=tmscore2=0;
+
+    float d1_norm,d2_norm; // di/d0
+    for (i=0;i<algnLen;i++)
+    {
+        if (R[i].alignKey==0)  // non gap position for both sequences
+        {
+            d1_norm=(R[i].dist/d01);
+            d2_norm=(R[i].dist/d02);
+            tmscore1+=1/(1+d1_norm*d1_norm);
+            tmscore2+=1/(1+d2_norm*d2_norm);
+        }
+    }
+    tmscore1/=na1;
+    tmscore2/=na2;
+}
 
 
 void PrintSSMAlignTable ( RCFile f, PCMMDBManager M1, PCMMDBManager M2,
-                                    PCSSMAlign SSMAlign )  {
-CXAlignText CXA;
-PSXTAlign   XTA;
-PPCAtom     Calpha1,Calpha2;
-int         nat1,nat2,nr,j;
+                                    PCSSMAlign SSMAlign )  
+{
+    CXAlignText CXA;
+    PSXTAlign   XTA;
+    PPCAtom     Calpha1,Calpha2;
+    int         nat1,nat2,nr,j;
+    float       tmscore1,tmscore2;
+    char        S[200];
 
-  M1->GetSelIndex ( SSMAlign->selHndCa1,Calpha1,nat1 );
-  M2->GetSelIndex ( SSMAlign->selHndCa2,Calpha2,nat2 );
+    M1->GetSelIndex ( SSMAlign->selHndCa1,Calpha1,nat1 );
+    M2->GetSelIndex ( SSMAlign->selHndCa2,Calpha2,nat2 );
 
-  CXA.XAlign ( SSMAlign->G1,Calpha1,SSMAlign->Ca1,nat1,
+    CXA.XAlign(SSMAlign->G1,Calpha1,SSMAlign->Ca1,nat1,
                SSMAlign->G2,Calpha2,SSMAlign->Ca2,nat2,
                SSMAlign->dist1,nr );
 
-  f.LF();
-  if (SSMAlign->cnCheck!=CSSC_None)  {
-    f.WriteLine ( ".-------------.------------.-------------." );
-    f.WriteLine ( "|    Query    |  Dist.(A)  |   Target    |" );
-    f.WriteLine ( "|-------------+------------+-------------|" );
-  } else  {
-    f.WriteLine (
-    ".-------------.------------.-----------------------------------");
-    f.WriteLine (
-    "|    Query    |  Dist.(A)  |   Target"                          );
-    f.WriteLine (
-    "|-------------+------------+-----------------------------------");
-  }
-  XTA = CXA.GetTextRows();
-  for (j=0;j<nr;j++)
-    XTA[j].Print ( f );
-  if (SSMAlign->cnCheck!=CSSC_None)
-    f.WriteLine ( "`-------------'------------'-------------'" );
-  else
-    f.WriteLine (
-    "`-------------'------------'-----------------------------------");
-  f.LF();
-  f.WriteLine ( " Notations:" );
-  f.WriteLine ( " S/H   residue belongs to a strand/helix" );
-  f.WriteLine ( " +/-/. hydrophylic/hydrophobic/neutral residue" );
-  f.WriteLine ( " **    identical residues matched: similarity 5" );
-  f.WriteLine ( " ++    similarity 4" );
-  f.WriteLine ( " ==    similarity 3" );
-  f.WriteLine ( " --    similarity 2" );
-  f.WriteLine ( " ::    similarity 1" );
-  f.WriteLine ( " ..    dissimilar residues: similarity 0" );
+    f.LF();
+    if (SSMAlign->cnCheck!=CSSC_None)  {
+        f.WriteLine ( ".-------------.------------.-------------." );
+        f.WriteLine ( "|    Query    |  Dist.(A)  |   Target    |" );
+        f.WriteLine ( "|-------------+------------+-------------|" );
+    } else  {
+        f.WriteLine (
+        ".-------------.------------.-----------------------------------");
+        f.WriteLine (
+        "|    Query    |  Dist.(A)  |   Target"                          );
+        f.WriteLine (
+        "|-------------+------------+-----------------------------------");
+    }
+    XTA = CXA.GetTextRows();
+    for (j=0;j<nr;j++)
+        XTA[j].Print ( f );
+    if (SSMAlign->cnCheck!=CSSC_None)
+        f.WriteLine ( "`-------------'------------'-------------'" );
+    else
+        f.WriteLine (
+        "`-------------'------------'-----------------------------------");
+    f.LF();
+    f.WriteLine ( " Notations:" );
+    f.WriteLine ( " S/H   residue belongs to a strand/helix" );
+    f.WriteLine ( " +/-/. hydrophylic/hydrophobic/neutral residue" );
+    f.WriteLine ( " **    identical residues matched: similarity 5" );
+    f.WriteLine ( " ++    similarity 4" );
+    f.WriteLine ( " ==    similarity 3" );
+    f.WriteLine ( " --    similarity 2" );
+    f.WriteLine ( " ::    similarity 1" );
+    f.WriteLine ( " ..    dissimilar residues: similarity 0" );
 
-  f.WriteLine ( " " );
-  f.WriteLine ( " Sequence alignment from SSM:" );
-  f.WriteLine ( " " );
-  pstr algn1=NULL, algn2=NULL;
-  CXA.GetAlignments ( algn1, algn2 );
-  f.WriteLine ( algn1 );
-  f.WriteLine ( algn2 );
+    CXA.GetTMscore(tmscore1,tmscore2);
+    sprintf ( S, "\n"
+        "Length of Chain_1: %d residues\n"
+        "Length of Chain_2: %d residues\n"
+        "TM-score= %.5f (if normalized by length of Chain_1)\n"
+        "TM-score= %.5f (if normalized by length of Chain_1)",
+        nat1, nat2, tmscore1, tmscore2);
+    f.WriteLine(S);
+
+    f.WriteLine ( " " );
+    f.WriteLine ( " Sequence alignment from SSM:" );
+    f.WriteLine ( " " );
+    pstr algn1=NULL, algn2=NULL;
+    CXA.GetAlignments ( algn1, algn2 );
+    f.WriteLine ( algn1 );
+    f.WriteLine ( algn2 );
 
 }
 

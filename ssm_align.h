@@ -194,6 +194,7 @@ class CXAlignText : public CXAlign  {
     PSXTAlign GetTextRows   () { return R; }
     void      GetAlignments ( pstr & algn1, pstr & algn2 );
     void      WipeTextRows  ();
+    void      GetTMscore  (float &tmscore1,float &tmscore2);
 
   protected :
     PSXTAlign R;
