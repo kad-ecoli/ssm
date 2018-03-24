@@ -214,52 +214,61 @@ PCSSGraph G;
 
 
 int CSSMAlign::Align ( PCMMDBManager M1, PCMMDBManager M2,
-                       int precision, int connectivity,
-                       int selHnd1,   int selHnd2 )  {
-PPCSSMatch Match;
-ivector    F1,F2;
-realtype   Q,Q1;
-int        i,nMatches,nm;
+    int precision, int connectivity, int selHnd1,   int selHnd2 ) 
+{
+    PPCSSMatch Match;
+    ivector    F1,F2;
+    realtype   Q,Q1;
+    int        i,nMatches,nm;
 
-  FreeMemory();
+    FreeMemory();
 
-  SetSSMatchPrecision    ( precision    );
-  SetSSConnectivityCheck ( connectivity );
-  cnCheck = connectivity;
+    SetSSMatchPrecision    ( precision    );
+    SetSSConnectivityCheck ( connectivity );
+    cnCheck = connectivity;
 
-  U.SetUniqueMatch ( True );
-  U.SetBestMatch   ( True );
+    U.SetUniqueMatch ( True );
+    U.SetBestMatch   ( True );
+    
+    //cout<<"G1 = GetSSGraph ( M1,selHnd1,i );"<<endl;
+    G1 = GetSSGraph ( M1,selHnd1,i );
+    if (!G1)  return i;
 
-  G1 = GetSSGraph ( M1,selHnd1,i );
-  if (!G1)  return i;
+    //cout<<"G2 = GetSSGraph ( M2,selHnd2,i );"<<endl;
+    G2 = GetSSGraph ( M2,selHnd2,i );
+    if (!G2)  return i+2;
 
-  G2 = GetSSGraph ( M2,selHnd2,i );
-  if (!G2)  return i+2;
+    //cout<<"U.MatchGraphs ( G1,G2,1 );"<<endl;
+    U.MatchGraphs ( G1,G2,1 );
 
-  U.MatchGraphs ( G1,G2,1 );
+    //cout<<"U.GetMatches ( Match,nMatches );"<<endl;
+    U.GetMatches ( Match,nMatches );
+    if (nMatches<=0)  return SSM_noHits;
 
-  U.GetMatches ( Match,nMatches );
-  if (nMatches<=0)  return SSM_noHits;
-
-  Qscore = -0.5;
-  for (i=0;i<nMatches;i++)
-    if (Match[i])  {
-      Match[i]->GetMatch ( F1,F2,nm );
-      Superpose.SuperposeCalphas ( G1,G2,F1,F2,nm,M1,M2,
-                                   selHnd1,selHnd2 );
-      Q1 = Superpose.GetCalphaQ();
-      if ((Q1>0.0) && (Q1>Qscore))  {
-        Qscore = Q1;
-        Superpose.GetSuperposition ( Ca1,dist1,nres1,Ca2,nres2,TMatrix,
-                                     rmsd,nalgn,ngaps,seqIdentity,
-                                     nmd,ncombs );
-      }
+    //cout<<"Qscore;"<<endl;
+    Qscore = -0.5;
+    for (i=0;i<nMatches;i++)
+    {
+        if (Match[i])  
+        {
+            Match[i]->GetMatch ( F1,F2,nm );
+            Superpose.SuperposeCalphas(G1,G2,F1,F2,nm,M1,M2,selHnd1,selHnd2);
+            Q1 = Superpose.GetCalphaQ();
+            if ((Q1>0.0) && (Q1>Qscore))  
+            {
+                Qscore = Q1;
+                Superpose.GetSuperposition(Ca1,dist1,nres1,Ca2,nres2,TMatrix,
+                    rmsd,nalgn,ngaps,seqIdentity, nmd,ncombs );
+            }
+        }
     }
-
-  if (Qscore>0.0)  {
-    MakeSelections ( M1,selHnd1, M2,selHnd2 );
-    return SSM_Ok;
-  }
+    
+    //cout<<"MakeSelections ( M1,selHnd1, M2,selHnd2 );"<<endl;
+    if (Qscore>0.0)  
+    {
+        MakeSelections ( M1,selHnd1, M2,selHnd2 );
+        return SSM_Ok;
+    }
 
   return SSM_noSPSN;
 
@@ -918,7 +927,7 @@ void PrintSSMAlignTable ( RCFile f, PCMMDBManager M1, PCMMDBManager M2,
         "Length of Chain_1: %d residues\n"
         "Length of Chain_2: %d residues\n"
         "TM-score= %.5f (if normalized by length of Chain_1)\n"
-        "TM-score= %.5f (if normalized by length of Chain_1)",
+        "TM-score= %.5f (if normalized by length of Chain_2)",
         nat1, nat2, tmscore1, tmscore2);
     f.WriteLine(S);
 

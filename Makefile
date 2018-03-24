@@ -35,8 +35,8 @@ all: ${PROG}
 libmmdb.a: ${MMDB_CPP}
 	cd mmdb;${CXX} ${CXXFLAGS} -c *.cpp;ar rvs ../libmmdb.a *.o;cd ..
 
-ssm: ${SSM_HEADERS} ${SSM_CPP} ${MMDB_CPP} ssm.cpp
-	${CXX} ${CXXFLAGS} ${MMDB_CPP} ${SSM_CPP} $@.cpp -o $@ ${LDFLAGS}
+ssm: libmmdb.a ${SSM_HEADERS} ${SSM_CPP} ${MMDB_CPP} ssm.cpp
+	${CXX} ${CXXFLAGS} ${SSM_CPP} $@.cpp libmmdb.a -o $@ ${LDFLAGS}
 
 clean-obj:
 	rm mmdb/*.o
